@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sameer Sadruddin | Cybersecurity Portfolio</title>
+  <script>document.documentElement.classList.add('js');</script>
+  <style>
+    :root {
+      --green: #00ff88; --blue: #4da6ff; --amber: #ffaa00; --purple: #c084fc; --red: #ff6b6b;
+      --bg: #0a0a0a; --panel: #0d0d0d; --line: #1e3a2f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: #e0e0e0; font-family: 'Courier New', monospace; overflow-x: hidden; }
+    .site { min-height: 100vh; position: relative; z-index: 1; }
+
+    /* ---------- boot sequence ---------- */
+    #boot {
+      position: fixed; inset: 0; z-index: 2000; background: #050505;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      transition: opacity 0.5s ease, visibility 0.5s;
+      cursor: pointer;
+    }
+    #boot.done { opacity: 0; visibility: hidden; }
+    .boot-inner { width: min(560px, 100%); font-size: 13px; line-height: 1.9; color: #5f8f76; }
+    .boot-inner .ok { color: var(--green); }
+    .boot-inner .grant {
+      color: var(--green); font-size: 18px; letter-spacing: 4px; margin-top: 10px;
+      text-shadow: 0 0 12px rgba(0,255,136,0.6); animation: flicker 0.4s steps(2) 2;
+    }
+    .boot-skip { position: absolute; bottom: 24px; right: 24px; font-size: 10px; color: #333; letter-spacing: 2px; }
+    @keyframes flicker { 0%{opacity:0.2} 50%{opacity:1} 100%{opacity:0.6} }
+
+    /* ---------- ambient effects ---------- */
+    .progress {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 30;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      transform-origin: left; transform: scaleX(0);
+      box-shadow: 0 0 10px rgba(0,255,136,0.6);
+    }
+    .cursor-glow {
+      position: fixed; top: 0; left: 0; width: 520px; height: 520px; margin: -260px 0 0 -260px;
+      border-radius: 50%; pointer-events: none; z-index: 0;
+      background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, rgba(0,255,136,0) 65%);
+      opacity: 0; transition: opacity 0.4s;
+    }
+    .scan-line {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      animation: scan 4s ease-in-out infinite;
+      pointer-events: none; z-index: 999; opacity: 0.3;
+    }
+    @keyframes scan { 0%{top:0; opacity:0.3} 50%{opacity:0.1} 100%{top:100vh; opacity:0} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+    @keyframes slideRight { to { opacity:1; transform:translateX(0); } }
+    @keyframes cardIn { to { opacity:1; transform:translateY(0); } }
+
+    /* ---------- nav ---------- */
+    nav {
+      background: rgba(13,13,13,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 40px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 20;
+      transition: transform 0.6s cubic-bezier(0.2,0.7,0.2,1);
+    }
+    .js nav { transform: translateY(-100%); }
+    .booted nav { transform: none; }
+    .nav-logo { color: var(--green); font-size: 16px; font-weight: bold; letter-spacing: 2px; text-decoration: none; }
+    .nav-logo span { animation: blink 1.2s step-end infinite; }
+    .nav-links { display: flex; gap: 28px; }
+    .nav-links a {
+      color: #888; font-size: 13px; text-decoration: none; letter-spacing: 1px;
+      transition: color 0.2s; position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 1px;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--green); }
+    .nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); }
+
+    /* ---------- hero ---------- */
+    .hero {
+      padding: 80px 40px 60px; border-bottom: 1px solid #1a1a1a;
+      max-width: 900px; margin: 0 auto; position: relative; overflow: hidden;
+    }
+    .matrix-bg { position: absolute; inset: 0; pointer-events: none; opacity: 0.08; }
+    .hero > *:not(canvas) { position: relative; }
+
+    .hero-tag { color: var(--green); font-size: 12px; letter-spacing: 3px; margin-bottom: 16px; white-space: nowrap; min-height: 16px; }
+    .js .hero-tag-inner { opacity: 0; }
+    .hero-tag-inner.typing { opacity: 1; }
+    .hero-tag-inner.typing::after {
+      content: '_'; margin-left: 2px; animation: blink 0.8s step-end infinite;
+    }
+
+    .hero-name {
+      font-size: 42px; font-weight: bold; color: #fff; display: inline-block;
+      font-family: Arial, sans-serif; line-height: 1.1; margin-bottom: 10px;
+      position: relative; cursor: default;
+    }
+    .hero-name::before, .hero-name::after {
+      content: attr(data-text); position: absolute; left: 0; top: 0;
+      pointer-events: none; opacity: 0; mix-blend-mode: screen;
+    }
+    .hero-name::before { color: var(--green); }
+    .hero-name::after  { color: var(--red); }
+    .hero-name.glitch::before { animation: glitchA 0.45s steps(3) both; }
+    .hero-name.glitch::after  { animation: glitchB 0.45s steps(3) both; }
+    @keyframes glitchA {
+      0%  { opacity:0.9; clip-path: inset(8% 0 62% 0);  transform: translate(-4px,-1px); }
+      33% { opacity:0.9; clip-path: inset(58% 0 12% 0); transform: translate(3px,1px); }
+      66% { opacity:0.9; clip-path: inset(30% 0 44% 0); transform: translate(-2px,0); }
+      100%{ opacity:0;   clip-path: inset(0 0 100% 0);  transform: none; }
+    }
+    @keyframes glitchB {
+      0%  { opacity:0.8; clip-path: inset(66% 0 6% 0);  transform: translate(4px,1px); }
+      33% { opacity:0.8; clip-path: inset(14% 0 64% 0); transform: translate(-3px,-1px); }
+      66% { opacity:0.8; clip-path: inset(44% 0 30% 0); transform: translate(2px,0); }
+      100%{ opacity:0;   clip-path: inset(0 0 100% 0);  transform: none; }
+    }
+
+    .hero-title { font-size: 15px; color: #888; margin-bottom: 24px; letter-spacing: 1px; min-height: 22px; }
+    .hero-title .prompt { color: var(--green); margin-right: 8px; }
+    .hero-title #role { color: #ddd; }
+    .caret {
+      display: inline-block; width: 8px; height: 15px; margin-left: 3px; vertical-align: -2px;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      animation: blink 1s step-end infinite;
+    }
+    .hero-desc {
+      font-size: 14px; color: #888; line-height: 1.7; max-width: 620px; font-family: Arial, sans-serif;
+    }
+    .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+
+    .js .hero-name, .js .hero-title, .js .hero-desc, .js .badge { opacity: 0; transform: translateY(18px); }
+    .hero.show .hero-name  { animation: fadeUp 0.6s cubic-bezier(0.2,0.7,0.2,1) forwards; }
+    .hero.show .hero-title { animation: fadeUp 0.6s cubic-bezier(0.2,0.7,0.2,1) 0.2s forwards; }
+    .hero.show .hero-desc  { animation: fadeUp 0.6s cubic-bezier(0.2,0.7,0.2,1) 0.4s forwards; }
+    .hero.show .badge      { animation: badgeIn 0.5s cubic-bezier(0.3,1.4,0.5,1) calc(0.6s + var(--i) * 0.1s) forwards; }
+    @keyframes badgeIn { 0%{opacity:0; transform:translateY(18px) scale(0.8)} 100%{opacity:1; transform:none} }
+
+    .badge {
+      background: #0d1f16; border: 1px solid var(--line);
+      color: var(--green); font-size: 11px; padding: 5px 12px;
+      border-radius: 4px; letter-spacing: 1px; position: relative; overflow: hidden;
+      transition: background 0.2s, translate 0.2s, box-shadow 0.2s;
+    }
+    .badge::after {
+      content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 50%;
+      background: linear-gradient(100deg, transparent, rgba(0,255,136,0.35), transparent);
+      animation: sweep 5s ease-in-out infinite; animation-delay: calc(2.4s + var(--i) * 0.25s);
+    }
+    @keyframes sweep { 0%{left:-60%} 25%,100%{left:130%} }
+    .badge:hover { background: #1a3a26; translate: 0 -3px; box-shadow: 0 4px 16px rgba(0,255,136,0.15); }
+
+    /* ---------- sections ---------- */
+    .section { max-width: 900px; margin: 0 auto; padding: 60px 40px; }
+    .section.divided { border-top: 1px solid #1a1a1a; }
+    .section-label {
+      color: var(--green); font-size: 11px; letter-spacing: 3px;
+      margin-bottom: 28px; display: flex; align-items: center; gap: 12px; white-space: pre;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), #1e3a2f 60%, transparent);
+      transform-origin: left; transition: transform 1s cubic-bezier(0.4,0,0.2,1) 0.2s;
+    }
+    .js .section-label { opacity: 0; transform: translateX(-20px); }
+    .js .section-label::after { transform: scaleX(0); }
+    .js .section-label.visible { animation: slideRight 0.5s ease forwards; }
+    .js .section-label.visible::after { transform: scaleX(1); }
+
+    /* ---------- project cards ---------- */
+    @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .project-card {
+      background: var(--panel); border: 1px solid #1e1e1e; border-radius: 8px; padding: 24px;
+      position: relative; cursor: default; transform-style: preserve-3d;
+    }
+    .project-card > * { position: relative; z-index: 1; }
+    .project-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: 0; pointer-events: none;
+      background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(0,255,136,0.10), transparent 60%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .project-card::after {
+      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; z-index: 2; pointer-events: none;
+      background: conic-gradient(from var(--angle), transparent 0 55%, var(--green) 72%, var(--blue) 86%, transparent 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0; transition: opacity 0.3s;
+      animation: spin 2.5s linear infinite; animation-play-state: paused;
+    }
+    .project-card:hover::before, .project-card:hover::after { opacity: 1; }
+    .project-card:hover::after { animation-play-state: running; }
+    @keyframes spin { to { --angle: 360deg; } }
+
+    .js .project-card { opacity: 0; transform: translateY(30px); }
+    .js .project-card.visible { animation: cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) var(--d, 0s) forwards; }
+    .project-card, .js .project-card.ready {
+      opacity: 1; animation: none;
+      transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+      transition: transform 0.2s ease-out, box-shadow 0.3s, border-color 0.3s;
+    }
+    .project-card:hover { --lift: -6px; border-color: #1e3a2f; box-shadow: 0 14px 40px rgba(0,255,136,0.10); }
+
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 8px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      animation: float 4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.7s);
+      transition: scale 0.3s, rotate 0.3s, box-shadow 0.3s;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    .project-card:hover .card-icon { scale: 1.15; rotate: -6deg; box-shadow: 0 0 18px rgba(0,255,136,0.25); }
+    .icon-green { background: #0d1f16; border: 1px solid #1e3a2f; }
+    .icon-blue  { background: #0d1525; border: 1px solid #1a2e50; }
+    .icon-amber { background: #1f1500; border: 1px solid #3a2800; }
+    .icon-purple{ background: #150d1f; border: 1px solid #2e1a50; }
+    .icon-red   { background: #1f0d0d; border: 1px solid #3a1a1a; }
+
+    .card-title { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 8px; font-family: Arial, sans-serif; transition: color 0.3s; }
+    .project-card:hover .card-title { color: var(--green); }
+    .card-desc  { font-size: 12px; color: #666; line-height: 1.6; font-family: Arial, sans-serif; margin-bottom: 16px; transition: color 0.3s; }
+    .project-card:hover .card-desc { color: #999; }
+    .card-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; padding: 3px 8px; border-radius: 3px; letter-spacing: 0.5px; font-family: monospace; transition: translate 0.25s; }
+    .project-card:hover .tag { translate: 0 -2px; }
+    .project-card:hover .tag:nth-child(2) { transition-delay: 0.05s; }
+    .project-card:hover .tag:nth-child(3) { transition-delay: 0.1s; }
+    .tag-green  { background: #0d1f16; color: var(--green);  border: 1px solid #1e3a2f; }
+    .tag-blue   { background: #0d1525; color: var(--blue);   border: 1px solid #1a2e50; }
+    .tag-amber  { background: #1f1500; color: var(--amber);  border: 1px solid #3a2800; }
+    .tag-purple { background: #150d1f; color: var(--purple); border: 1px solid #2e1a50; }
+    .tag-red    { background: #1f0d0d; color: var(--red);    border: 1px solid #3a1a1a; }
+
+    /* ---------- panels ---------- */
+    .viz-panel {
+      background: var(--panel); border: 1px solid #1e1e1e;
+      border-radius: 8px; padding: 24px; margin-bottom: 16px;
+    }
+    .js .viz-panel { opacity: 0; transform: translateY(20px); }
+    .js .viz-panel.visible { animation: cardIn 0.6s ease forwards; }
+    .viz-title { font-size: 12px; color: #444; letter-spacing: 1px; margin-bottom: 20px; }
+    .viz-title .live { color: var(--green); margin-left: 10px; font-size: 10px; animation: blink 1.6s step-end infinite; }
+
+    /* ---------- skill bars ---------- */
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .bar-label { font-size: 11px; color: #666; width: 90px; text-align: right; font-family: monospace; flex-shrink: 0; transition: color 0.2s; }
+    .bar-track { flex: 1; background: #1a1a1a; border-radius: 2px; height: 8px; overflow: hidden; transition: background 0.2s; }
+    .bar-fill {
+      height: 100%; border-radius: 2px; width: 0; position: relative; overflow: hidden;
+      background: var(--c); box-shadow: 0 0 10px -1px var(--c);
+      transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .bar-fill::after {
+      content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+      animation: barShine 3.2s ease-in-out infinite; animation-delay: calc(1.6s + var(--i) * 0.18s);
+    }
+    @keyframes barShine { 0%{left:-40%} 40%,100%{left:110%} }
+    .bar-val { font-size: 11px; color: #555; width: 34px; font-family: monospace; transition: color 0.2s; }
+    .bar-row:hover .bar-label { color: #ddd; }
+    .bar-row:hover .bar-val { color: var(--green); }
+    .bar-row:hover .bar-track { background: #222; }
+
+    /* ---------- timeline ---------- */
+    .timeline { position: relative; padding-left: 20px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px;
+      background: linear-gradient(180deg, var(--green), var(--line) 30%, var(--line) 80%, var(--amber));
+      transform-origin: top; transition: transform 1.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .js .timeline::before { transform: scaleY(0); }
+    .js .timeline.drawn::before { transform: scaleY(1); }
+    .tl-item { position: relative; margin-bottom: 20px; transition: translate 0.25s; }
+    .js .tl-item { opacity: 0; transform: translateX(-10px); }
+    .js .tl-item.visible { animation: slideRight 0.45s ease var(--d, 0s) forwards; }
+    .tl-item:hover { translate: 4px 0; }
+    .tl-dot {
+      position: absolute; left: -18px; top: 3px; width: 9px; height: 9px; border-radius: 50%;
+      background: var(--green); border: 2px solid var(--bg);
+    }
+    .tl-dot::after {
+      content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 1px solid currentColor; opacity: 0;
+      color: var(--green);
+    }
+    .tl-dot-amber { background: var(--amber); }
+    .tl-dot-amber::after { color: var(--amber); }
+    .js .tl-item.visible .tl-dot { animation: dotPop 0.5s cubic-bezier(0.3,1.6,0.5,1) calc(var(--d, 0s) + 0.15s) both; }
+    .js .tl-item.visible .tl-dot::after { animation: ping 1.1s ease-out calc(var(--d, 0s) + 0.3s) 2; }
+    @keyframes dotPop { from { scale: 0; } to { scale: 1; } }
+    @keyframes ping { 0%{opacity:0.8; transform:scale(1)} 100%{opacity:0; transform:scale(3)} }
+    .tl-year { font-size: 10px; color: var(--green); letter-spacing: 1px; margin-bottom: 4px; }
+    .tl-text { font-size: 12px; color: #888; font-family: Arial, sans-serif; line-height: 1.5; }
+    .tl-bold { color: #ccc; font-weight: bold; transition: color 0.25s; }
+    .tl-item:hover .tl-bold { color: #fff; }
+
+    .pulse-dot {
+      display: inline-block; width: 8px; height: 8px;
+      background: var(--green); border-radius: 50%; margin-right: 8px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.5); }
+      50% { box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+    }
+
+    /* ---------- contact ---------- */
+    .contact-grid { display: flex; gap: 32px; flex-wrap: wrap; }
+    .contact-item { cursor: default; min-width: 0; transition: translate 0.2s; }
+    .js .contact-item { opacity: 0; transform: translateY(12px); }
+    .js #ctPanel.visible .contact-item { animation: fadeUp 0.5s ease calc(0.2s + var(--i) * 0.1s) forwards; }
+    .contact-item:hover { translate: 4px 0; }
+    .contact-link {
+      font-size: 13px; color: var(--green); text-decoration: none; word-break: break-word;
+      background: linear-gradient(var(--green), var(--green)) left bottom / 0 1px no-repeat;
+      transition: background-size 0.3s ease, text-shadow 0.3s;
+      padding-bottom: 2px;
+    }
+    .contact-link:hover { background-size: 100% 1px; text-shadow: 0 0 10px rgba(0,255,136,0.6); }
+
+    footer { border-top: 1px solid #1a1a1a; padding: 24px 40px; text-align: center; font-size: 11px; color: #333; letter-spacing: 1px; }
+    .footer-link { color: var(--green); text-decoration: none; }
+
+    @media (max-width: 640px) {
+      nav { padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .nav-links { gap: 16px; flex-wrap: wrap; }
+      .nav-links a { font-size: 12px; }
+      .hero { padding: 56px 16px 44px; }
+      .hero-name { font-size: 32px; }
+      .hero-title { font-size: 13px; }
+      .hero-tag { letter-spacing: 2px; }
+      .section { padding: 44px 16px; }
+      .bar-label { width: 84px; }
+      footer { padding: 20px 16px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important; animation-delay: 0s !important;
+        animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+      #boot, .scan-line, .cursor-glow, .matrix-bg, .badge::after, .bar-fill::after { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="boot" aria-hidden="true">
+  <div class="boot-inner" id="bootLines"></div>
+  <div class="boot-skip">CLICK TO SKIP</div>
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="scan-line"></div>
+
+<div class="site">
+
+  <nav>
+    <a class="nav-logo" href="#top">SS://PORTFOLIO<span>_</span></a>
+    <div class="nav-links">
+      <a href="#projects">projects</a>
+      <a href="#skills">skills</a>
+      <a href="#timeline">timeline</a>
+      <a href="#contact">contact</a>
+    </div>
+  </nav>
+
+  <div class="hero" id="top">
+    <canvas class="matrix-bg" id="matrixCanvas"></canvas>
+    <div class="hero-tag"><span class="hero-tag-inner">// TECH SUPPORT ANALYST</span></div>
+    <div><div class="hero-name" data-text="Sameer Sadruddin">Sameer Sadruddin</div></div>
+    <div class="hero-title"><span class="prompt">&gt;</span><span id="role">SOC Analyst | Threat Detection | Security Operations</span><span class="caret"></span></div>
+    <div class="hero-desc">Business Analytics graduate with a cybersecurity concentration, building real-world detection and threat intelligence tools. Bridging data analytics with hands-on security lab work.</div>
+    <div class="hero-badges">
+      <span class="badge" style="--i:0">CompTIA Security+</span>
+      <span class="badge" style="--i:1">AWS Cloud Practitioner</span>
+      <span class="badge" style="--i:2">MITRE ATT&amp;CK</span>
+      <span class="badge" style="--i:3">Richmond, VA</span>
+    </div>
+  </div>
+
+  <div class="section" id="projects">
+    <div class="section-label"><span class="lbl-text">01   PROJECTS</span></div>
+    <div class="projects-grid">
+      <div class="project-card" style="--d:0.05s">
+        <div class="card-icon icon-green" style="--i:0">🍯</div>
+        <div class="card-title">Cowrie Honeypot &amp; ATT&amp;CK Dashboard</div>
+        <div class="card-desc">Deployed a Cowrie SSH/Telnet honeypot on Ubuntu, parsed attacker logs with jq, and mapped activity to MITRE ATT&amp;CK techniques. Built an interactive Power BI dashboard as a SOC threat intel report.</div>
+        <div class="card-tags">
+          <span class="tag tag-green">Ubuntu</span>
+          <span class="tag tag-green">MITRE ATT&amp;CK</span>
+          <span class="tag tag-amber">Power BI</span>
+        </div>
+      </div>
+      <div class="project-card" style="--d:0.12s">
+        <div class="card-icon icon-blue" style="--i:1">🖥️</div>
+        <div class="card-title">Home SIEM Lab</div>
+        <div class="card-desc">Configured a home lab SIEM to ingest and alert on multi-source security events. Built detection rules and dashboards simulating SOC triage, investigation, and escalation workflows.</div>
+        <div class="card-tags">
+          <span class="tag tag-blue">Splunk</span>
+          <span class="tag tag-blue">Log Analysis</span>
+          <span class="tag tag-green">Detection Rules</span>
+        </div>
+      </div>
+      <div class="project-card" style="--d:0.19s">
+        <div class="card-icon icon-purple" style="--i:2">🔍</div>
+        <div class="card-title">IOC Enrichment Script</div>
+        <div class="card-desc">Python script that automates IOC enrichment via the VirusTotal API for hashes, IPs, and domains. Outputs structured threat intel reports mapping indicators to malware families and threat actors.</div>
+        <div class="card-tags">
+          <span class="tag tag-purple">Python</span>
+          <span class="tag tag-purple">VirusTotal API</span>
+          <span class="tag tag-green">IOC</span>
+        </div>
+      </div>
+      <div class="project-card" style="--d:0.26s">
+        <div class="card-icon icon-amber" style="--i:3">☁️</div>
+        <div class="card-title">AWS Cloud Foundations Lab</div>
+        <div class="card-desc">Deployed EC2 instances and S3 buckets with IAM roles and security groups enforcing least-privilege. Set up CloudWatch monitoring and explored VPC networking with subnets and NACLs.</div>
+        <div class="card-tags">
+          <span class="tag tag-amber">AWS EC2</span>
+          <span class="tag tag-amber">IAM</span>
+          <span class="tag tag-amber">CloudWatch</span>
+        </div>
+      </div>
+      <div class="project-card" style="--d:0.33s">
+        <div class="card-icon icon-red" style="--i:4">🐍</div>
+        <div class="card-title">LinkedIn Job Alert Automation</div>
+        <div class="card-desc">Python RSS feed parser monitoring job boards for SOC analyst postings in real time with feedparser and SQLite. Gmail SMTP integration cuts response time from hours to minutes.</div>
+        <div class="card-tags">
+          <span class="tag tag-red">Python</span>
+          <span class="tag tag-red">SQLite</span>
+          <span class="tag tag-purple">Automation</span>
+        </div>
+      </div>
+      <div class="project-card" style="--d:0.40s">
+        <div class="card-icon icon-blue" style="--i:5">🌊</div>
+        <div class="card-title">NIST CSF Gap Assessment &amp; Wireshark</div>
+        <div class="card-desc">Simulated NIST CSF gap assessment identifying control deficiencies and remediation priorities. Performed Wireshark packet capture to identify anomalous patterns and practice network forensics.</div>
+        <div class="card-tags">
+          <span class="tag tag-blue">Wireshark</span>
+          <span class="tag tag-blue">NIST CSF</span>
+          <span class="tag tag-green">Forensics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section divided" id="skills">
+    <div class="section-label"><span class="lbl-text">02   SKILL LEVELS</span></div>
+    <div class="viz-panel" id="skillPanel">
+      <div class="viz-title">// PROFICIENCY INDEX<span class="live">● LIVE</span></div>
+      <div class="bar-row"><span class="bar-label">Python</span><div class="bar-track"><div class="bar-fill" data-w="82" style="--c:#00ff88; --i:0"></div></div><span class="bar-val">82%</span></div>
+      <div class="bar-row"><span class="bar-label">SQL</span><div class="bar-track"><div class="bar-fill" data-w="80" style="--c:#00ff88; --i:1"></div></div><span class="bar-val">80%</span></div>
+      <div class="bar-row"><span class="bar-label">Wireshark</span><div class="bar-track"><div class="bar-fill" data-w="70" style="--c:#4da6ff; --i:2"></div></div><span class="bar-val">70%</span></div>
+      <div class="bar-row"><span class="bar-label">MITRE ATT&amp;CK</span><div class="bar-track"><div class="bar-fill" data-w="75" style="--c:#4da6ff; --i:3"></div></div><span class="bar-val">75%</span></div>
+      <div class="bar-row"><span class="bar-label">Splunk</span><div class="bar-track"><div class="bar-fill" data-w="60" style="--c:#ffaa00; --i:4"></div></div><span class="bar-val">60%</span></div>
+      <div class="bar-row"><span class="bar-label">AWS</span><div class="bar-track"><div class="bar-fill" data-w="55" style="--c:#ffaa00; --i:5"></div></div><span class="bar-val">55%</span></div>
+      <div class="bar-row"><span class="bar-label">Power BI</span><div class="bar-track"><div class="bar-fill" data-w="72" style="--c:#c084fc; --i:6"></div></div><span class="bar-val">72%</span></div>
+      <div class="bar-row"><span class="bar-label">Bash / Linux</span><div class="bar-track"><div class="bar-fill" data-w="65" style="--c:#00ff88; --i:7"></div></div><span class="bar-val">65%</span></div>
+    </div>
+  </div>
+
+  <div class="section divided" id="timeline">
+    <div class="section-label"><span class="lbl-text">03   TIMELINE</span></div>
+    <div class="viz-panel" id="tlPanel">
+      <div class="viz-title">// CAREER PROGRESSION</div>
+      <div class="timeline">
+        <div class="tl-item" style="--d:0.05s">
+          <div class="tl-dot"></div>
+          <div class="tl-year"><span class="pulse-dot"></span>MAY 2026 — PRESENT</div>
+          <div class="tl-text"><span class="tl-bold">Technical Support Analyst @ ChemTreat</span> — Glen Allen, VA. Tier I/II support for Windows, Microsoft 365, and network issues; device imaging and deployment; onsite and remote troubleshooting.</div>
+        </div>
+        <div class="tl-item" style="--d:0.2s">
+          <div class="tl-dot"></div>
+          <div class="tl-year">DEC 2025 — APR 2026</div>
+          <div class="tl-text"><span class="tl-bold">Security &amp; Risk Analyst @ JRP</span> — Richmond, VA. Security and compliance gap analysis, risk documentation, SQL/Tableau reporting, stakeholder briefings.</div>
+        </div>
+        <div class="tl-item" style="--d:0.35s">
+          <div class="tl-dot"></div>
+          <div class="tl-year">AUG — NOV 2025</div>
+          <div class="tl-text"><span class="tl-bold">Tech Support Analyst @ Breakthru Beverage</span> — Tampa, FL. Active Directory IAM, endpoint security, SOC-style escalation workflows.</div>
+        </div>
+        <div class="tl-item" style="--d:0.5s">
+          <div class="tl-dot"></div>
+          <div class="tl-year">NOV 2024 — AUG 2025</div>
+          <div class="tl-text"><span class="tl-bold">Data Analyst @ Robert Half</span> — Remote. Security product financial evaluation, vendor analysis, executive reporting.</div>
+        </div>
+        <div class="tl-item" style="--d:0.65s">
+          <div class="tl-dot"></div>
+          <div class="tl-year">2024</div>
+          <div class="tl-text"><span class="tl-bold">B.S. Business Analytics &amp; Information Systems</span> — University of South Florida. Cybersecurity concentration.</div>
+        </div>
+        <div class="tl-item" style="--d:0.8s">
+          <div class="tl-dot tl-dot-amber"></div>
+          <div class="tl-year" style="color:#ffaa00;">2024 — 2025</div>
+          <div class="tl-text"><span class="tl-bold">Portfolio Projects</span> — Honeypot, SIEM lab, IOC enrichment, AWS labs, Wireshark analysis.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section divided" id="contact">
+    <div class="section-label"><span class="lbl-text">04   CONTACT</span></div>
+    <div class="viz-panel" id="ctPanel">
+      <div class="contact-grid">
+        <div class="contact-item" style="--i:0"><div class="viz-title">// EMAIL</div><a class="contact-link" href="mailto:Panjwani.Sameer1@gmail.com">Panjwani.Sameer1@gmail.com</a></div>
+        <div class="contact-item" style="--i:1"><div class="viz-title">// PHONE</div><a class="contact-link" href="tel:+18325426468">(832) 542-6468</a></div>
+        <div class="contact-item" style="--i:2"><div class="viz-title">// LINKEDIN</div><a class="contact-link" href="https://www.linkedin.com/in/Sameer-Sadruddin" target="_blank" rel="noopener">linkedin.com/in/Sameer-Sadruddin</a></div>
+        <div class="contact-item" style="--i:3"><div class="viz-title">// GITHUB</div><a class="contact-link" href="https://github.com/SameerSadruddin" target="_blank" rel="noopener">github.com/SameerSadruddin</a></div>
+        <div class="contact-item" style="--i:4"><div class="viz-title">// LOCATION</div><div style="font-size: 13px; color: #888;">Richmond, VA</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 Sameer Sadruddin &nbsp;|&nbsp; <a class="footer-link" href="#top">SS://PORTFOLIO</a> &nbsp;|&nbsp; Built for cybersecurity roles
+  </footer>
+</div>
+
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const GLYPHS = '!<>-_\\/[]{}=+*^?#$%01ABCDEF';
+
+  /* ---------- text scramble ---------- */
+  function scramble(el, duration = 600) {
+    if (reduce) return;
+    const final = el.dataset.final || el.textContent;
+    el.dataset.final = final;
+    if (el._scrambling) return;
+    el._scrambling = true;
+    const start = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - start) / duration);
+      const reveal = Math.floor(p * final.length);
+      let out = '';
+      for (let i = 0; i < final.length; i++) {
+        const ch = final[i];
+        out += (i < reveal || ch === ' ') ? ch : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+      }
+      el.textContent = out;
+      if (p < 1) requestAnimationFrame(step);
+      else { el.textContent = final; el._scrambling = false; }
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- matrix rain ---------- */
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+  const chars = '01アイウエオカキクケコABCDEF0123456789';
+  const fontSize = 12;
+  let drops = [];
+  function resizeCanvas() {
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+    const cols = Math.floor(canvas.width / fontSize);
+    drops = Array.from({ length: cols }, (_, i) => drops[i] || Math.random() * -40);
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(10,10,10,0.06)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillStyle = Math.random() > 0.96 ? '#ffffff' : '#00ff88';
+      ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  if (!reduce) setInterval(drawMatrix, 55);
+
+  /* ---------- hero sequence ---------- */
+  const heroName = document.querySelector('.hero-name');
+  function glitch() {
+    if (reduce || heroName.classList.contains('glitch')) return;
+    heroName.classList.add('glitch');
+    setTimeout(() => heroName.classList.remove('glitch'), 480);
+  }
+  heroName.addEventListener('mouseenter', glitch);
+
+  const roleEl = document.getElementById('role');
+  const roles = ['SOC Analyst', 'Threat Detection', 'Security Operations', 'Tier I/II IT Support', 'Security + Data Analytics'];
+  async function rotateRoles() {
+    if (reduce) { roleEl.textContent = roles.join(' | '); return; }
+    let i = 0;
+    while (true) {
+      const word = roles[i % roles.length];
+      for (let c = 1; c <= word.length; c++) { roleEl.textContent = word.slice(0, c); await sleep(55); }
+      await sleep(1700);
+      for (let c = word.length; c >= 0; c--) { roleEl.textContent = word.slice(0, c); await sleep(28); }
+      await sleep(250);
+      i++;
+    }
+  }
+
+  let started = false;
+  async function startSite() {
+    if (started) return;
+    started = true;
+    document.documentElement.classList.add('booted');
+    const tag = document.querySelector('.hero-tag-inner');
+    const tagText = tag.textContent;
+    roleEl.textContent = '';
+    if (!reduce) {
+      tag.textContent = '';
+      tag.classList.add('typing');
+      for (const ch of tagText) { tag.textContent += ch; await sleep(32); }
+    } else {
+      tag.classList.add('typing');
+    }
+    document.querySelector('.hero').classList.add('show');
+    setTimeout(glitch, 350);
+    setInterval(glitch, 6500);
+    setTimeout(rotateRoles, 700);
+  }
+
+  /* ---------- boot screen ---------- */
+  const boot = document.getElementById('boot');
+  let seen = false;
+  try { seen = sessionStorage.getItem('ss_booted') === '1'; } catch (e) {}
+
+  async function runBoot() {
+    try { sessionStorage.setItem('ss_booted', '1'); } catch (e) {}
+    const out = document.getElementById('bootLines');
+    let skipped = false;
+    const finish = () => {
+      if (boot.classList.contains('done')) return;
+      boot.classList.add('done');
+      window.removeEventListener('keydown', skip);
+      setTimeout(() => boot.remove(), 600);
+      startSite();
+    };
+    const skip = () => { skipped = true; finish(); };
+    boot.addEventListener('click', skip);
+    window.addEventListener('keydown', skip);
+
+    const lines = [
+      ['> establishing secure session', ' ......... OK'],
+      ['> loading modules: detection · threat-intel · cloud', ' ... OK'],
+      ['> verifying credentials: Security+ · AWS CCP', ' ...... OK'],
+    ];
+    for (const [txt, ok] of lines) {
+      if (skipped) return;
+      const row = document.createElement('div');
+      out.appendChild(row);
+      for (const ch of txt) { if (skipped) return; row.textContent += ch; await sleep(9); }
+      await sleep(120);
+      const s = document.createElement('span'); s.className = 'ok'; s.textContent = ok; row.appendChild(s);
+      await sleep(80);
+    }
+    if (skipped) return;
+    const grant = document.createElement('div');
+    grant.className = 'grant'; grant.textContent = 'ACCESS GRANTED';
+    out.appendChild(grant);
+    await sleep(650);
+    finish();
+  }
+
+  if (reduce || seen) { boot.remove(); startSite(); } else { runBoot(); }
+
+  /* ---------- scroll progress + active nav ---------- */
+  const progress = document.getElementById('progress');
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  const navLinks = [...document.querySelectorAll('.nav-links a')];
+  const navObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ['projects', 'skills', 'timeline', 'contact'].forEach(id => navObs.observe(document.getElementById(id)));
+  navLinks.forEach(a => a.addEventListener('mouseenter', () => scramble(a, 350)));
+
+  /* ---------- cursor glow ---------- */
+  if (finePointer && !reduce) {
+    const glow = document.getElementById('cursorGlow');
+    let tx = innerWidth / 2, ty = innerHeight / 2, x = tx, y = ty;
+    window.addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; glow.style.opacity = 1; });
+    document.addEventListener('pointerleave', () => { glow.style.opacity = 0; });
+    const loop = () => {
+      x += (tx - x) * 0.12; y += (ty - y) * 0.12;
+      glow.style.transform = `translate(${x}px, ${y}px)`;
+      requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  /* ---------- project cards: tilt + spotlight ---------- */
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('animationend', e => {
+      if (e.target === card && e.animationName === 'cardIn') card.classList.add('ready');
+    });
+    card.addEventListener('pointermove', e => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      card.style.setProperty('--mx', (px * 100) + '%');
+      card.style.setProperty('--my', (py * 100) + '%');
+      if (finePointer && !reduce) {
+        card.style.setProperty('--rx', ((0.5 - py) * 8).toFixed(2) + 'deg');
+        card.style.setProperty('--ry', ((px - 0.5) * 8).toFixed(2) + 'deg');
+      }
+    });
+    card.addEventListener('pointerleave', () => {
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+    });
+  });
+
+  /* ---------- contact + footer scramble on hover ---------- */
+  document.querySelectorAll('.contact-link, .footer-link').forEach(a => a.addEventListener('mouseenter', () => scramble(a, 400)));
+
+  /* ---------- reveal on scroll ---------- */
+  function countUp(el, to, dur = 1200) {
+    if (reduce) { el.textContent = to + '%'; return; }
+    const start = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - start) / dur);
+      el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))) + '%';
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      el.classList.add('visible');
+
+      if (el.classList.contains('section-label')) {
+        scramble(el.querySelector('.lbl-text'), 700);
+      }
+      if (el.id === 'skillPanel') {
+        el.querySelectorAll('.bar-val').forEach(v => v.textContent = '0%');
+        setTimeout(() => {
+          el.querySelectorAll('.bar-row').forEach((row, i) => {
+            setTimeout(() => {
+              const bar = row.querySelector('.bar-fill');
+              bar.style.width = bar.dataset.w + '%';
+              countUp(row.querySelector('.bar-val'), +bar.dataset.w);
+            }, i * 90);
+          });
+        }, 300);
+      }
+      if (el.id === 'tlPanel') {
+        setTimeout(() => el.querySelector('.timeline').classList.add('drawn'), 150);
+      }
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.section-label, .project-card, .viz-panel, .tl-item').forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>
